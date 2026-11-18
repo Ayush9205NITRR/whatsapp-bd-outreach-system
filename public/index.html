@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enout WhatsApp BD Outreach & Airtable Sync System</title>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --surface: #111827;
+      --surface-2: #1e293b;
+      --surface-3: #334155;
+      --border: #2dd4bf33;
+      --border-subtle: #1f2937;
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .topbar {
+      background: rgba(17, 24, 39, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    }
+
+    .brand h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .hardcoded-badges {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      background: var(--surface-2);
+      border: 1px solid var(--surface-3);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #cbd5e1;
+    }
+
+    .pill code {
+      color: #34d399;
+      font-weight: 600;
+    }
+
+    /* Executive Strip (8 BD Executives) */
+    .exec-bar {
+      background: #0f172a;
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 12px 24px;
+    }
+
+    .exec-bar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+
+    .exec-grid {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(135px, 1fr));
+      gap: 8px;
+      overflow-x: auto;
+    }
+
+    .exec-card {
+      background: var(--surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+
+    .exec-card:hover {
+      border-color: var(--surface-3);
+      transform: translateY(-1px);
+    }
+
+    .exec-card.active {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px var(--primary);
+    }
+
+    .exec-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .exec-seat {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: var(--surface-2);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #64748b;
+    }
+
+    .status-dot.ready, .status-dot.simulated_ready {
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+
+    .status-dot.qr_ready, .status-dot.initializing {
+      background: #f59e0b;
+      box-shadow: 0 0 8px #f59e0b;
+    }
+
+    .exec-name {
+      font-size: 12.5px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .exec-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Main Layout */
+    .main-container {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 20px 24px 60px;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 1100px) {
+      .main-container {
+        grid-template-columns: 1fr;
+      }
+      .exec-grid {
+        grid-template-columns: repeat(4, minmax(140px, 1fr));
+      }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .step-badge {
+      background: var(--accent);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    /* Buttons & Inputs */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      color: white;
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+    }
+
+    .btn-accent {
+      background: var(--accent);
+    }
+    .btn-accent:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background: var(--surface-2);
+      border-color: var(--surface-3);
+      color: var(--text);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--surface-3);
+    }
+
+    .btn-warning {
+      background: #d97706;
+    }
+    .btn-warning:hover:not(:disabled) {
+      background: #b45309;
+    }
+
+    .btn-sm {
+      padding: 6px 11px;
+      font-size: 12px;
+    }
+
+    .btn-block {
+      width: 100%;
+    }
+
+    .input, .select, .textarea {
+      width: 100%;
+      background: #0b1120;
+      border: 1px solid var(--surface-3);
+      color: var(--text);
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .input:focus, .select:focus, .textarea:focus {
+      border-color: var(--primary);
+    }
+
+    .textarea {
+      min-height: 110px;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 6px;
+    }
+
+    /* QR Box */
+    .qr-container {
+      background: #0b1120;
+      border: 1px dashed var(--surface-3);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      margin: 12px 0;
+    }
+
+    .qr-container img {
+      max-width: 220px;
+      border-radius: 8px;
+      background: white;
+      padding: 8px;
+      margin: 8px auto;
+      display: block;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      background: #0b1120;
+      padding: 5px;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 7px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      background: var(--surface-2);
+      color: var(--text);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    /* Variable Mapping Grid */
+    .var-map-row {
+      display: grid;
+      grid-template-columns: 140px 24px 1fr 1fr;
+      align-items: center;
+      gap: 10px;
+      background: #0b1120;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 8px;
+    }
+
+    .var-tag {
+      font-family: monospace;
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .var-sample {
+      font-size: 12px;
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.1);
+      padding: 5px 10px;
+      border-radius: 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Tables */
+    .table-wrap {
+      overflow-x: auto;
+      max-height: 290px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+
+    th {
+      background: #0f172a;
+      color: var(--text-muted);
+      text-align: left;
+      padding: 10px 12px;
+      position: sticky;
+      top: 0;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    td {
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: #e2e8f0;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-success {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+    }
+
+    .badge-warning {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+    }
+
+    .badge-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+    }
+
+    .badge-info {
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+    }
+
+    /* Logs Console */
+    .console-box {
+      background: #050811;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 11.5px;
+      max-height: 260px;
+      overflow-y: auto;
+      color: #a7f3d0;
+    }
+
+    .log-line {
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .log-time {
+      color: #64748b;
+      margin-right: 8px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .preview-bubble {
+      background: #064e3b;
+      color: #ecfdf5;
+      padding: 12px 14px;
+      border-radius: 12px 12px 12px 2px;
+      font-size: 13px;
+      white-space: pre-wrap;
+      border: 1px solid #059669;
+      margin-top: 8px;
+    }
+
+    .progress-bar-outer {
+      width: 100%;
+      height: 10px;
+      background: #0b1120;
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 10px 0;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .progress-bar-inner {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981, #3b82f6);
+      width: 0%;
+      transition: width 0.25s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon">💬</div>
+      <div>
+        <h1>Enout WhatsApp BD Outreach Hub</h1>
+        <p>Multi-Executive Campaign System • CSV & Airtable Sync • Demo Verification Gate</p>
+      </div>
+    </div>
+    <div class="hardcoded-badges">
+      <div class="pill">🏢 Airtable Base (Hardcoded): <code id="hdrBaseId">appxUfmx7hibOaBNb</code></div>
+      <div class="pill">📋 Airtable Table (Hardcoded): <code id="hdrTableName">Main</code></div>
+      <div class="pill">👥 Active Seat: <code id="hdrActiveExec">BD Exec 1 (Ayush)</code></div>
+    </div>
+  </header>
+
+  <!-- 8 BD Executives Switcher -->
+  <section class="exec-bar">
+    <div class="exec-bar-header">
+      <span>👥 Select BD Executive Workspace (8 Dedicated WhatsApp Sessions)</span>
+      <span id="globalStatsSummary">Total Sent Today: 0 | Airtable Synced: 0</span>
+    </div>
+    <div class="exec-grid" id="execGrid"></div>
+  </section>
+
+  <!-- Main Content Grid -->
+  <main class="main-container">
+
+    <!-- LEFT COLUMN: Executive WhatsApp Login + Live Console -->
+    <div>
+      <!-- Executive Session Card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="step-badge">SEAT</span>
+            <span id="execPanelTitle">BD Exec 1 (Ayush)</span>
+          </div>
+          <span id="execStatusBadge" class="badge badge-warning">Disconnected</span>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+          <label>Executive Display Name</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="execNameInput" class="input" value="BD Exec 1 (Ayush)" />
+            <button class="btn btn-secondary btn-sm" onclick="saveExecName()">Save</button>
+          </div>
+        </div>
+
+        <div class="qr-container" id="qrSection">
+          <div id="qrPlaceholder">
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px;">
+              Scan QR Code with WhatsApp to link this BD Executive's number.
+            </p>
+            <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+              <button class="btn btn-primary btn-sm" id="btnConnectSim" onclick="connectWhatsApp('simulation')">
+                ⚡ Generate QR Code
+              </button>
+              <button class="btn btn-secondary btn-sm" id="btnConnectLive" onclick="connectWhatsApp('live')">
+                🌐 Launch Live Browser QR
+              </button>
+            </div>
+          </div>
+
+          <div id="qrDisplayBox" style="display: none;">
+            <p style="font-size: 12px; color: #fbbf24; font-weight: 600;">
+              📲 Scan via WhatsApp → Linked Devices
+            </p>
+            <img id="qrImage" src="" alt="WhatsApp QR Code" />
+            <div style="display: flex; gap: 8px; justify-content: center; margin-top: 8px;">
+              <button class="btn btn-primary btn-sm" id="btnSimulateScan" onclick="completeQrScan()">
+                ✅ Complete QR Login (Link Number)
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="disconnectWhatsApp()">
+                Reset
+              </button>
+            </div>
+          </div>
+
+          <div id="connectedBox" style="display: none;">
+            <div style="font-size: 28px; margin-bottom: 4px;">✅</div>
+            <div style="font-weight: 700; color: #34d399; font-size: 14px;" id="connectedUserText">
+              Connected: BD Exec 1
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;" id="connectedWidText">
+              WhatsApp Session Active
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="disconnectWhatsApp()">
+              🔌 Disconnect Session
+            </button>
+          </div>
+        </div>
+
+        <!-- Executive Stats -->
+        <div class="grid-2" style="margin-top: 12px;">
+          <div style="background:#0b1120; padding:10px; border-radius:8px; text-align:center;">
+            <div style="font-size:11px; color:var(--text-muted);">Messages Sent</div>
+            <div style="font-size:18px; font-weight:700; color:#34d399;" id="statSent">0</div>
+          </div>
+          <div style="background:#0b1120; padding:10px; border-radius:8px; text-align:center;">
+            <div style="font-size:11px; color:var(--text-muted);">Airtable Updated</div>
+            <div style="font-size:18px; font-weight:700; color:#818cf8;" id="statAirtable">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity Logs Console -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🖥️ Live Executive Activity Log</div>
+          <button class="btn btn-secondary btn-sm" onclick="refreshCurrentExecutive()">Refresh</button>
+        </div>
+        <div class="console-box" id="execLogsConsole">
+          <div class="log-line">System ready. Select data source to begin.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: 4-Step Outreach Pipeline -->
+    <div>
+
+      <!-- STEP 1: DATA SOURCE (Airtable View OR CSV Share) -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="step-badge">STEP 1</span>
+            <span>Load Contacts (Airtable View Name or Share CSV)</span>
+          </div>
+          <span class="badge badge-info" id="loadedSourceBadge">0 Records Loaded</span>
+        </div>
+
+        <div class="tabs">
+          <button class="tab-btn active" id="tabBtnAirtable" onclick="switchSourceTab('airtable')">
+            📊 Airtable View (Hardcoded Base & Table)
+          </button>
+          <button class="tab-btn" id="tabBtnCsv" onclick="switchSourceTab('csv')">
+            📁 Upload / Share CSV File
+          </button>
+        </div>
+
+        <!-- Tab A: Airtable View -->
+        <div id="panelAirtable">
+          <div class="grid-2" style="margin-bottom: 12px;">
+            <div>
+              <label>Hardcoded Base & Table</label>
+              <input type="text" class="input" value="Base: appxUfmx7hibOaBNb  |  Table: Main" disabled style="opacity: 0.75;" />
+            </div>
+            <div>
+              <label>Airtable View Name (Enter view name to load)</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="airtableViewInput" class="input" value="reapply march 21" placeholder="e.g. reapply march 21" />
+                <button class="btn btn-primary" id="btnFetchAirtable" onclick="fetchAirtableView()">
+                  📥 Fetch View
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;">
+            <span style="font-size: 12px; color: var(--text-muted);">Quick Views:</span>
+            <button class="btn btn-secondary btn-sm" onclick="setAndFetchView('reapply march 21')">
+              reapply march 21 (Test Numbers)
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="setAndFetchView('enout test view')">
+              enout test view
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="setAndFetchView('batch shortlist 2026')">
+              batch shortlist 2026
+            </button>
+          </div>
+        </div>
+
+        <!-- Tab B: CSV Upload -->
+        <div id="panelCsv" style="display: none;">
+          <div class="grid-2" style="margin-bottom: 12px;">
+            <div>
+              <label>Upload CSV File (.csv)</label>
+              <input type="file" id="csvFileInput" accept=".csv" class="input" onchange="uploadCsvFile()" />
+            </div>
+            <div>
+              <label>Or Load Built-In CSV Presets</label>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-primary btn-sm" id="btnLoadTestCsv" onclick="loadCsvPreset('test_contacts')">
+                  🧪 Enout Test Contacts (92173 54399, 86900 22224)
+                </button>
+                <button class="btn btn-secondary btn-sm" id="btnLoadFullCsv" onclick="loadCsvPreset('full_batch')">
+                  📋 Full Batch (file.csv - 73 rows)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loaded Records Table -->
+        <div class="table-wrap" id="recordsTableWrap">
+          <table>
+            <thead id="recordsTableHead">
+              <tr><th>#</th><th>Record ID</th><th>Name</th><th>Phone</th><th>Airtable Status</th></tr>
+            </thead>
+            <tbody id="recordsTableBody">
+              <tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Loading records...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- STEP 2: MESSAGE TEMPLATE & VARIABLE POINTING -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="step-badge">STEP 2</span>
+            <span>Choose Message Template & Point Variables</span>
+          </div>
+          <span class="badge badge-success" id="varStatusBadge">Variables Mapped</span>
+        </div>
+
+        <div class="grid-2" style="margin-bottom: 14px;">
+          <div>
+            <label>Select Message Template</label>
+            <select id="templateSelect" class="select" onchange="onTemplateSelectChange()"></select>
+          </div>
+          <div>
+            <label>Phone Number Column (Point to Phone Field)</label>
+            <select id="phoneColumnSelect" class="select" onchange="onMappingChange()"></select>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <label>Message Template Text (Use <code>{{variable}}</code> or <code>{}</code> for dynamic personalization)</label>
+          <textarea id="templateTextarea" class="textarea" oninput="onTemplateTextEdit()">Hi {{name}} , From enout</textarea>
+        </div>
+
+        <!-- Variable Mapping List -->
+        <div style="margin-bottom: 14px;">
+          <label>🔗 Variable Pointing (Map each template variable to your CSV / Airtable column)</label>
+          <div id="variableMappingContainer"></div>
+        </div>
+
+        <!-- Live Preview from First Record -->
+        <div>
+          <label>👁️ Live Rendered Message Preview (Record #1)</label>
+          <div class="preview-bubble" id="livePreviewBubble">Hi Ayush , From enout</div>
+        </div>
+      </div>
+
+      <!-- STEP 3: AIRTABLE POST-SHOOT FIELD UPDATES -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="step-badge">STEP 3</span>
+            <span>Configure Airtable Field Updates After Shoot</span>
+          </div>
+          <span class="badge badge-info">Auto-PATCH on Send</span>
+        </div>
+
+        <p style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 12px;">
+          Once each WhatsApp message is shot, the system updates these specific fields under that Airtable record in <code>appxUfmx7hibOaBNb / Main</code>:
+        </p>
+
+        <div class="grid-2">
+          <div>
+            <label>Primary Checkbox / Status Field Name</label>
+            <input type="text" id="airtableField1Name" class="input" value="WA scheduling message sent" />
+          </div>
+          <div>
+            <label>New Value After Shoot</label>
+            <select id="airtableField1Value" class="select">
+              <option value="true" selected>true (Checked ✅)</option>
+              <option value="Sent">Sent (Text)</option>
+              <option value="Messaged by Enout">Messaged by Enout</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-top: 10px;">
+          <div>
+            <label>Secondary Tracking Field (Optional)</label>
+            <input type="text" id="airtableField2Name" class="input" value="Outreach Status" />
+          </div>
+          <div>
+            <label>Secondary Value</label>
+            <input type="text" id="airtableField2Value" class="input" value="Messaged - Enout" />
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4: DEMO RUN VERIFICATION & BULK SHOOT -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span class="step-badge">STEP 4</span>
+            <span>Demo Run Verification & Campaign Shoot</span>
+          </div>
+          <span id="demoVerifyBadge" class="badge badge-warning">Pending Demo Run</span>
+        </div>
+
+        <div class="grid-2" style="margin-bottom: 16px;">
+          <div>
+            <label>🧪 Test Phone Numbers for Demo Run (Comma separated)</label>
+            <input type="text" id="testNumbersInput" class="input" value="92173 54399, 86900 22224" />
+          </div>
+          <div>
+            <label>⏱️ Delay Between Messages (ms)</label>
+            <input type="number" id="shootDelayInput" class="input" value="600" min="100" max="10000" />
+          </div>
+        </div>
+
+        <!-- Action Buttons: 1. Demo Run -> 2. Shoot -->
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;">
+          <button class="btn btn-accent" id="btnDemoRun" onclick="runDemoVerification()" style="flex: 1; padding: 12px;">
+            🔍 1. Run Demo Verification (Verify Variables & Test Numbers)
+          </button>
+          <button class="btn btn-primary" id="btnShootCampaign" onclick="shootCampaign()" disabled style="flex: 1; padding: 12px;">
+            🚀 2. Shoot Campaign & Update Airtable Fields
+          </button>
+        </div>
+
+        <!-- Demo Run Verification Report Box -->
+        <div id="demoReportBox" style="display: none; background: #0b1120; border: 1px solid var(--surface-3); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <strong style="font-size: 13.5px; color: #34d399;" id="demoReportTitle">✅ Demo Run Verification Passed!</strong>
+            <span class="badge badge-success" id="demoReportStats">2/2 Ready</span>
+          </div>
+          <div id="demoTestShootList" style="margin-bottom: 10px; font-size: 12.5px;"></div>
+          <div class="table-wrap" style="max-height: 180px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Phone (Formatted)</th>
+                  <th>Variables</th>
+                  <th>Rendered Message Preview</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="demoReportTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Live Shoot Progress & Results -->
+        <div id="shootProgressBox" style="display: none; background: #0b1120; border: 1px solid var(--primary); border-radius: 10px; padding: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong style="font-size: 14px; color: #34d399;" id="shootStatusTitle">🚀 Shooting Campaign...</strong>
+            <span class="badge badge-info" id="shootProgressCounter">0 / 0</span>
+          </div>
+          <div class="progress-bar-outer">
+            <div class="progress-bar-inner" id="shootProgressBar"></div>
+          </div>
+          <div class="table-wrap" style="max-height: 240px; margin-top: 10px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Record ID</th>
+                  <th>Recipient</th>
+                  <th>Phone</th>
+                  <th>Message Sent</th>
+                  <th>Airtable Updated</th>
+                </tr>
+              </thead>
+              <tbody id="shootResultsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // ========================================================================
+    // FRONTEND STATE
+    // ========================================================================
+    let executives = [];
+    let currentExecId = 'bd-exec-1';
+    let templates = [];
+    let currentSourceType = 'airtable'; // 'airtable' | 'csv'
+    let currentViewName = 'reapply march 21';
+    let loadedColumns = [];
+    let loadedRecords = [];
+    let variableMap = {};
+    let demoVerified = false;
+    let activeJobPoll = null;
+
+    // ========================================================================
+    // INITIALIZATION
+    // ========================================================================
+    window.addEventListener('DOMContentLoaded', async () => {
+      await fetchExecutives();
+      await fetchTemplates();
+      await fetchAirtableView();
+      setInterval(pollExecutiveStatus, 3000);
+    });
+
+    async function fetchExecutives() {
+      const res = await fetch('/api/executives');
+      const data = await res.json();
+      executives = data.executives || [];
+      renderExecutiveBar();
+      updateExecutivePanel();
+    }
+
+    async function pollExecutiveStatus() {
+      try {
+        const res = await fetch('/api/executives');
+        const data = await res.json();
+        executives = data.executives || [];
+        renderExecutiveBar();
+        updateExecutivePanel();
+      } catch (_) {}
+    }
+
+    function renderExecutiveBar() {
+      const grid = document.getElementById('execGrid');
+      let totalSent = 0;
+      let totalAirtable = 0;
+
+      grid.innerHTML = executives.map(ex => {
+        totalSent += ex.stats.messagesSent || 0;
+        totalAirtable += ex.stats.airtableUpdated || 0;
+        const activeClass = ex.id === currentExecId ? 'active' : '';
+        const statusLabel =
+          ex.status === 'ready' || ex.status === 'simulated_ready'
+            ? 'Connected'
+            : ex.status === 'qr_ready'
+            ? 'Scan QR'
+            : ex.status === 'initializing'
+            ? 'Starting...'
+            : 'Offline';
+
+        return `
+          <div class="exec-card ${activeClass}" onclick="selectExecutive('${ex.id}')" id="execCard-${ex.id}">
+            <div class="exec-card-top">
+              <span class="exec-seat">SEAT #${ex.seatNumber}</span>
+              <span class="status-dot ${ex.status}"></span>
+            </div>
+            <div class="exec-name">${escapeHtml(ex.name)}</div>
+            <div class="exec-meta">${statusLabel} • ${ex.stats.messagesSent} sent</div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('globalStatsSummary').textContent =
+        `Total Sent Today: ${totalSent} | Airtable Synced: ${totalAirtable}`;
+    }
+
+    function selectExecutive(execId) {
+      currentExecId = execId;
+      const ex = executives.find(e => e.id === currentExecId);
+      if (ex) {
+        document.getElementById('execNameInput').value = ex.name;
+      }
+      renderExecutiveBar();
+      updateExecutivePanel();
+    }
+
+    function updateExecutivePanel() {
+      const ex = executives.find(e => e.id === currentExecId);
+      if (!ex) return;
+
+      document.getElementById('hdrActiveExec').textContent = ex.name;
+      document.getElementById('execPanelTitle').textContent = ex.name;
+      document.getElementById('statSent').textContent = ex.stats.messagesSent || 0;
+      document.getElementById('statAirtable').textContent = ex.stats.airtableUpdated || 0;
+
+      const badge = document.getElementById('execStatusBadge');
+      const qrPlaceholder = document.getElementById('qrPlaceholder');
+      const qrDisplayBox = document.getElementById('qrDisplayBox');
+      const connectedBox = document.getElementById('connectedBox');
+
+      if (ex.status === 'ready' || ex.status === 'simulated_ready') {
+        badge.className = 'badge badge-success';
+        badge.textContent = 'Connected ✅';
+        qrPlaceholder.style.display = 'none';
+        qrDisplayBox.style.display = 'none';
+        connectedBox.style.display = 'block';
+        document.getElementById('connectedUserText').textContent =
+          `Linked: ${ex.connectedUser?.pushname || ex.name}`;
+        document.getElementById('connectedWidText').textContent =
+          `WhatsApp ID: ${ex.connectedUser?.wid || 'Active'}@${ex.status === 'ready' ? 'c.us (Live)' : 'c.us'}`;
+      } else if (ex.status === 'qr_ready' && ex.qrDataUrl) {
+        badge.className = 'badge badge-warning';
+        badge.textContent = 'QR Ready - Scan Now';
+        qrPlaceholder.style.display = 'none';
+        qrDisplayBox.style.display = 'block';
+        connectedBox.style.display = 'none';
+        document.getElementById('qrImage').src = ex.qrDataUrl;
+      } else if (ex.status === 'initializing') {
+        badge.className = 'badge badge-info';
+        badge.textContent = 'Initializing...';
+        qrPlaceholder.style.display = 'block';
+        qrDisplayBox.style.display = 'none';
+        connectedBox.style.display = 'none';
+      } else {
+        badge.className = 'badge badge-warning';
+        badge.textContent = 'Not Linked';
+        qrPlaceholder.style.display = 'block';
+        qrDisplayBox.style.display = 'none';
+        connectedBox.style.display = 'none';
+      }
+
+      // Render logs
+      const logBox = document.getElementById('execLogsConsole');
+      if (ex.logs && ex.logs.length > 0) {
+        logBox.innerHTML = ex.logs.map(l => {
+          const time = new Date(l.timestamp).toLocaleTimeString();
+          const color = l.level === 'error' ? '#f87171' : l.level === 'warn' ? '#fbbf24' : '#a7f3d0';
+          return `<div class="log-line" style="color:${color}"><span class="log-time">[${time}]</span>${escapeHtml(l.message)}</div>`;
+        }).join('');
+      }
+    }
+
+    async function saveExecName() {
+      const name = document.getElementById('execNameInput').value.trim();
+      if (!name) return;
+      await fetch(`/api/executives/${currentExecId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      await fetchExecutives();
+    }
+
+    async function connectWhatsApp(mode) {
+      await fetch(`/api/executives/${currentExecId}/connect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode })
+      });
+      await fetchExecutives();
+    }
+
+    async function completeQrScan() {
+      await fetch(`/api/executives/${currentExecId}/simulate-scan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: '919217354399' })
+      });
+      await fetchExecutives();
+    }
+
+    async function disconnectWhatsApp() {
+      await fetch(`/api/executives/${currentExecId}/disconnect`, { method: 'POST' });
+      await fetchExecutives();
+    }
+
+    async function refreshCurrentExecutive() {
+      await fetchExecutives();
+    }
+
+    // ========================================================================
+    // STEP 1: DATA SOURCES (AIRTABLE VIEW & CSV)
+    // ========================================================================
+    function switchSourceTab(tab) {
+      currentSourceType = tab;
+      document.getElementById('tabBtnAirtable').classList.toggle('active', tab === 'airtable');
+      document.getElementById('tabBtnCsv').classList.toggle('active', tab === 'csv');
+      document.getElementById('panelAirtable').style.display = tab === 'airtable' ? 'block' : 'none';
+      document.getElementById('panelCsv').style.display = tab === 'csv' ? 'block' : 'none';
+    }
+
+    function setAndFetchView(viewName) {
+      document.getElementById('airtableViewInput').value = viewName;
+      fetchAirtableView();
+    }
+
+    async function fetchAirtableView() {
+      const viewName = document.getElementById('airtableViewInput').value.trim() || 'reapply march 21';
+      currentViewName = viewName;
+      currentSourceType = 'airtable';
+
+      const res = await fetch('/api/airtable/fetch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          viewName,
+          executiveId: currentExecId
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        loadedColumns = data.columns || [];
+        loadedRecords = data.records || [];
+        document.getElementById('loadedSourceBadge').textContent =
+          `Airtable View "${viewName}" (${loadedRecords.length} records)`;
+        renderLoadedRecordsTable();
+        populateColumnDropdowns();
+        autoMapVariables();
+        renderVariableMappingUI();
+        updateLivePreview();
+        resetDemoVerification();
+        await fetchExecutives();
+      }
+    }
+
+    async function loadCsvPreset(presetName) {
+      currentSourceType = 'csv';
+      const res = await fetch(`/api/csv/preset/${presetName}?executiveId=${currentExecId}`);
+      const data = await res.json();
+      if (data.success) {
+        loadedColumns = data.columns || [];
+        loadedRecords = data.records || [];
+        document.getElementById('loadedSourceBadge').textContent =
+          `CSV Preset "${presetName}" (${loadedRecords.length} rows)`;
+        renderLoadedRecordsTable();
+        populateColumnDropdowns();
+        autoMapVariables();
+        renderVariableMappingUI();
+        updateLivePreview();
+        resetDemoVerification();
+        await fetchExecutives();
+      }
+    }
+
+    async function uploadCsvFile() {
+      const input = document.getElementById('csvFileInput');
+      if (!input.files || !input.files[0]) return;
+      const formData = new FormData();
+      formData.append('file', input.files[0]);
+      formData.append('executiveId', currentExecId);
+
+      const res = await fetch('/api/csv/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success) {
+        currentSourceType = 'csv';
+        loadedColumns = data.columns || [];
+        loadedRecords = data.records || [];
+        document.getElementById('loadedSourceBadge').textContent =
+          `CSV "${data.fileName}" (${loadedRecords.length} rows)`;
+        renderLoadedRecordsTable();
+        populateColumnDropdowns();
+        autoMapVariables();
+        renderVariableMappingUI();
+        updateLivePreview();
+        resetDemoVerification();
+        await fetchExecutives();
+      }
+    }
+
+    function renderLoadedRecordsTable() {
+      const thead = document.getElementById('recordsTableHead');
+      const tbody = document.getElementById('recordsTableBody');
+
+      if (!loadedRecords.length) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No records found</td></tr>`;
+        return;
+      }
+
+      const displayCols = loadedColumns.slice(0, 6);
+      thead.innerHTML = `<tr>
+        <th>#</th>
+        <th>Record ID</th>
+        ${displayCols.map(c => `<th>${escapeHtml(c)}</th>`).join('')}
+      </tr>`;
+
+      tbody.innerHTML = loadedRecords.slice(0, 50).map((row, idx) => {
+        return `<tr>
+          <td>${idx + 1}</td>
+          <td><code>${escapeHtml(row._recordId || '')}</code></td>
+          ${displayCols.map(c => {
+            const val = row[c];
+            if (typeof val === 'boolean') {
+              return `<td>${val ? '<span class="badge badge-success">true ✅</span>' : '<span class="badge badge-warning">false</span>'}</td>`;
+            }
+            return `<td>${escapeHtml(String(val ?? ''))}</td>`;
+          }).join('')}
+        </tr>`;
+      }).join('');
+    }
+
+    // ========================================================================
+    // STEP 2: TEMPLATES & VARIABLE MAPPING
+    // ========================================================================
+    async function fetchTemplates() {
+      const res = await fetch('/api/templates');
+      const data = await res.json();
+      templates = data.templates || [];
+      const select = document.getElementById('templateSelect');
+      select.innerHTML = templates.map(t =>
+        `<option value="${t.id}">[${t.category}] ${escapeHtml(t.name)}</option>`
+      ).join('');
+
+      if (templates.length > 0) {
+        document.getElementById('templateTextarea').value = templates[0].content;
+      }
+    }
+
+    function onTemplateSelectChange() {
+      const id = document.getElementById('templateSelect').value;
+      const t = templates.find(x => x.id === id);
+      if (t) {
+        document.getElementById('templateTextarea').value = t.content;
+        autoMapVariables();
+        renderVariableMappingUI();
+        updateLivePreview();
+        resetDemoVerification();
+      }
+    }
+
+    function onTemplateTextEdit() {
+      autoMapVariables();
+      renderVariableMappingUI();
+      updateLivePreview();
+      resetDemoVerification();
+    }
+
+    function populateColumnDropdowns() {
+      const phoneSelect = document.getElementById('phoneColumnSelect');
+      const phoneCandidates = ['phone text', 'number', 'phone', 'mobile', 'contact'];
+      let bestPhoneCol = loadedColumns[0] || 'number';
+
+      for (const cand of phoneCandidates) {
+        const match = loadedColumns.find(c => c.toLowerCase() === cand);
+        if (match) {
+          bestPhoneCol = match;
+          break;
+        }
+      }
+
+      phoneSelect.innerHTML = loadedColumns.map(c =>
+        `<option value="${escapeHtml(c)}" ${c === bestPhoneCol ? 'selected' : ''}>${escapeHtml(c)}</option>`
+      ).join('');
+    }
+
+    function extractVariablesFromText(text) {
+      const vars = new Set();
+      const regex = /\{\{\s*([^}]+?)\s*\}\}/g;
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        vars.add(match[1].trim());
+      }
+      if (text.includes('{}')) {
+        vars.add('name');
+      }
+      return Array.from(vars);
+    }
+
+    function autoMapVariables() {
+      const text = document.getElementById('templateTextarea').value;
+      const vars = extractVariablesFromText(text);
+      const newMap = {};
+
+      vars.forEach(v => {
+        if (variableMap[v] && loadedColumns.includes(variableMap[v])) {
+          newMap[v] = variableMap[v];
+          return;
+        }
+        // Smart match
+        const exact = loadedColumns.find(c => c.toLowerCase() === v.toLowerCase());
+        if (exact) {
+          newMap[v] = exact;
+        } else if (v.toLowerCase().includes('name')) {
+          const nameCol = loadedColumns.find(c => c.toLowerCase().includes('name'));
+          newMap[v] = nameCol || loadedColumns[0] || v;
+        } else {
+          newMap[v] = loadedColumns[0] || v;
+        }
+      });
+
+      variableMap = newMap;
+    }
+
+    function renderVariableMappingUI() {
+      const container = document.getElementById('variableMappingContainer');
+      const text = document.getElementById('templateTextarea').value;
+      const vars = extractVariablesFromText(text);
+      const sampleRow = loadedRecords[0] || {};
+
+      if (vars.length === 0) {
+        container.innerHTML = `<div style="font-size:12px; color:var(--text-muted);">No dynamic variables in template.</div>`;
+        return;
+      }
+
+      container.innerHTML = vars.map(v => {
+        const selectedCol = variableMap[v] || '';
+        const sampleVal = sampleRow[selectedCol] ?? '(empty)';
+        return `
+          <div class="var-map-row">
+            <span class="var-tag">{{${escapeHtml(v)}}}</span>
+            <span style="color:var(--text-muted);">→</span>
+            <select class="select" onchange="updateVarMap('${escapeHtml(v)}', this.value)">
+              ${loadedColumns.map(col =>
+                `<option value="${escapeHtml(col)}" ${col === selectedCol ? 'selected' : ''}>Column: ${escapeHtml(col)}</option>`
+              ).join('')}
+            </select>
+            <span class="var-sample">Sample: "${escapeHtml(String(sampleVal))}"</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateVarMap(varName, colName) {
+      variableMap[varName] = colName;
+      renderVariableMappingUI();
+      updateLivePreview();
+      resetDemoVerification();
+    }
+
+    function onMappingChange() {
+      updateLivePreview();
+      resetDemoVerification();
+    }
+
+    function updateLivePreview() {
+      const text = document.getElementById('templateTextarea').value;
+      const sampleRow = loadedRecords[0] || { name: 'Ayush', 'Full Name': 'Ayush' };
+
+      let preview = text;
+      if (preview.includes('{}')) {
+        const col = variableMap['name'] || 'name';
+        preview = preview.replace(/\{\}/g, sampleRow[col] || sampleRow['Full Name'] || sampleRow['name'] || 'Ayush');
+      }
+      preview = preview.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (_, rawVar) => {
+        const v = rawVar.trim();
+        const col = variableMap[v] || v;
+        return sampleRow[col] ?? `{{${v}}}`;
+      });
+
+      document.getElementById('livePreviewBubble').textContent = preview;
+    }
+
+    // ========================================================================
+    // STEP 4: DEMO RUN VERIFICATION & BULK SHOOT
+    // ========================================================================
+    function resetDemoVerification() {
+      demoVerified = false;
+      document.getElementById('btnShootCampaign').disabled = true;
+      const badge = document.getElementById('demoVerifyBadge');
+      badge.className = 'badge badge-warning';
+      badge.textContent = 'Run Demo Verification First';
+    }
+
+    async function runDemoVerification() {
+      const phoneColumn = document.getElementById('phoneColumnSelect').value;
+      const templateText = document.getElementById('templateTextarea').value;
+      const rawTestNums = document.getElementById('testNumbersInput').value;
+      const testNumbers = rawTestNums.split(',').map(s => s.trim()).filter(Boolean);
+
+      const btn = document.getElementById('btnDemoRun');
+      btn.disabled = true;
+      btn.textContent = '⏳ Running Demo Verification...';
+
+      try {
+        const res = await fetch('/api/campaign/demo-run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            executiveId: currentExecId,
+            records: loadedRecords,
+            phoneColumn,
+            templateText,
+            variableMap,
+            testNumbers,
+            fireTestMessages: true
+          })
+        });
+        const data = await res.json();
+
+        const reportBox = document.getElementById('demoReportBox');
+        reportBox.style.display = 'block';
+
+        document.getElementById('demoReportStats').textContent =
+          `${data.summary.validRecords}/${data.summary.totalRecords} Records Verified Ready`;
+
+        // Render Test Shoot Results
+        const testShootDiv = document.getElementById('demoTestShootList');
+        if (data.testShootResults && data.testShootResults.length > 0) {
+          testShootDiv.innerHTML = `<div style="margin-bottom:6px; font-weight:600; color:#a5b4fc;">📲 Demo Test Shoot Results:</div>` +
+            data.testShootResults.map(t => `
+              <div style="padding:6px 10px; background:#111827; border-radius:6px; margin-bottom:4px; display:flex; justify-content:space-between;">
+                <span>Phone: <code>${escapeHtml(t.number)}</code> → <em>"${escapeHtml(t.message)}"</em></span>
+                <span class="badge badge-success">${escapeHtml(t.status)} ✅</span>
+              </div>
+            `).join('');
+        } else {
+          testShootDiv.innerHTML = '';
+        }
+
+        // Render per-record verification rows
+        const tbody = document.getElementById('demoReportTableBody');
+        tbody.innerHTML = (data.recordChecks || []).slice(0, 25).map(r => `
+          <tr>
+            <td>${r.index}</td>
+            <td><code>${escapeHtml(r.formattedPhone)}</code></td>
+            <td>${r.varsOk
+              ? '<span class="badge badge-success">All Pointed ✅</span>'
+              : `<span class="badge badge-danger">Missing: ${escapeHtml(r.missingVars.join(', '))}</span>`
+            }</td>
+            <td>${escapeHtml(r.renderedMessage.slice(0, 90))}${r.renderedMessage.length > 90 ? '...' : ''}</td>
+            <td>${r.ready
+              ? '<span class="badge badge-success">Ready to Shoot ✅</span>'
+              : '<span class="badge badge-danger">Fix Needed</span>'
+            }</td>
+          </tr>
+        `).join('');
+
+        if (data.verified) {
+          demoVerified = true;
+          document.getElementById('btnShootCampaign').disabled = false;
+          const badge = document.getElementById('demoVerifyBadge');
+          badge.className = 'badge badge-success';
+          badge.textContent = 'Demo Verified ✅ Ready to Shoot';
+        }
+
+        await fetchExecutives();
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔍 1. Run Demo Verification (Verify Variables & Test Numbers)';
+      }
+    }
+
+    async function shootCampaign() {
+      const phoneColumn = document.getElementById('phoneColumnSelect').value;
+      const templateText = document.getElementById('templateTextarea').value;
+      const delayMs = parseInt(document.getElementById('shootDelayInput').value || '600', 10);
+
+      // Build Airtable field updates object
+      const airtableUpdates = {};
+      const f1Name = document.getElementById('airtableField1Name').value.trim();
+      const f1ValRaw = document.getElementById('airtableField1Value').value;
+      if (f1Name) {
+        airtableUpdates[f1Name] = f1ValRaw === 'true' ? true : f1ValRaw;
+      }
+      const f2Name = document.getElementById('airtableField2Name').value.trim();
+      const f2Val = document.getElementById('airtableField2Value').value.trim();
+      if (f2Name && f2Val) {
+        airtableUpdates[f2Name] = f2Val;
+      }
+
+      document.getElementById('shootProgressBox').style.display = 'block';
+      document.getElementById('btnShootCampaign').disabled = true;
+
+      const res = await fetch('/api/campaign/shoot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          executiveId: currentExecId,
+          sourceType: currentSourceType,
+          viewName: currentViewName,
+          records: loadedRecords,
+          phoneColumn,
+          templateText,
+          variableMap,
+          airtableUpdates,
+          delayMs
+        })
+      });
+
+      const data = await res.json();
+      if (data.success && data.jobId) {
+        pollCampaignJob(data.jobId);
+      }
+    }
+
+    function pollCampaignJob(jobId) {
+      if (activeJobPoll) clearInterval(activeJobPoll);
+
+      const updateJobUI = async () => {
+        const res = await fetch(`/api/campaign/status/${jobId}`);
+        const data = await res.json();
+        const job = data.job;
+        if (!job) return;
+
+        const pct = job.total > 0 ? Math.round((job.processed / job.total) * 100) : 100;
+        document.getElementById('shootProgressBar').style.width = `${pct}%`;
+        document.getElementById('shootProgressCounter').textContent =
+          `${job.processed} / ${job.total} (${pct}%)`;
+
+        if (job.status === 'completed') {
+          document.getElementById('shootStatusTitle').textContent =
+            `🎉 Campaign Shoot Completed! (${job.sent} Sent, ${job.airtableUpdatedCount} Airtable Records Updated)`;
+          document.getElementById('btnShootCampaign').disabled = false;
+          clearInterval(activeJobPoll);
+          // Refresh Airtable view table to show updated fields live!
+          if (currentSourceType === 'airtable') {
+            await fetchAirtableViewSilent();
+          }
+          await fetchExecutives();
+        } else {
+          document.getElementById('shootStatusTitle').textContent =
+            `🚀 Shooting Messages & Updating Airtable... (${job.processed}/${job.total})`;
+        }
+
+        const tbody = document.getElementById('shootResultsTableBody');
+        tbody.innerHTML = (job.results || []).map(r => `
+          <tr>
+            <td>${r.index}</td>
+            <td><code>${escapeHtml(r.recordId)}</code></td>
+            <td><strong>${escapeHtml(r.recipientName)}</strong></td>
+            <td><code>${escapeHtml(r.phone)}</code></td>
+            <td>
+              ${r.status === 'sent'
+                ? `<span class="badge badge-success">Sent ✅</span> <span style="font-size:11px; color:var(--text-muted);">"${escapeHtml(r.message.slice(0, 45))}"</span>`
+                : `<span class="badge badge-danger">${escapeHtml(r.status)}</span>`
+              }
+            </td>
+            <td>
+              ${r.airtableUpdated
+                ? `<span class="badge badge-info">Updated: ${escapeHtml(JSON.stringify(r.airtableFieldsChanged))} ✅</span>`
+                : `<span class="badge badge-warning">N/A</span>`
+              }
+            </td>
+          </tr>
+        `).join('');
+      };
+
+      updateJobUI();
+      activeJobPoll = setInterval(updateJobUI, 500);
+    }
+
+    async function fetchAirtableViewSilent() {
+      const res = await fetch('/api/airtable/fetch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          viewName: currentViewName,
+          executiveId: currentExecId
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        loadedRecords = data.records || [];
+        renderLoadedRecordsTable();
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>

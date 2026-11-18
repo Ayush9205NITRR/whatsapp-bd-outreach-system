@@ -1,0 +1,22 @@
+{
+  "name": "whatsapp-bd-outreach-system",
+  "version": "1.0.0",
+  "description": "Multi-Executive WhatsApp Outreach & Airtable Sync System (8 BD Executives, CSV & Airtable View Support, Template Variable Mapping, Demo Run Verification, and Bulk Campaign Execution)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "cli-test": "node legacy/index-1.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "cors": "^2.8.6",
+    "csv-parser": "^3.0.0",
+    "express": "^4.22.3",
+    "multer": "^1.4.5-lts.2",
+    "puppeteer": "^24.4.0",
+    "qrcode": "^1.5.4",
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.26.0"
+  }
+}
