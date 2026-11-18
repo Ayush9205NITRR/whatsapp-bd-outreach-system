@@ -1201,7 +1201,12 @@
         return;
       }
 
-      const displayCols = loadedColumns.slice(0, 6);
+      const priorityCols = ['Full Name', 'name', 'phone text', 'number', 'Referred By', 'WA scheduling message sent', 'Outreach Status'];
+      const orderedCols = [
+        ...priorityCols.filter(c => loadedColumns.includes(c)),
+        ...loadedColumns.filter(c => !priorityCols.includes(c))
+      ];
+      const displayCols = orderedCols.slice(0, 6);
       thead.innerHTML = `<tr>
         <th>#</th>
         <th>Record ID</th>

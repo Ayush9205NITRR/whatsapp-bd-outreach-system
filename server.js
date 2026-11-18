@@ -595,6 +595,16 @@ app.get('/api/airtable/config', (req, res) => {
     });
 });
 
+app.post('/api/airtable/reset', (req, res) => {
+    Object.values(AIRTABLE_VIEWS_STORE).forEach(viewList => {
+        viewList.forEach(rec => {
+            rec.fields['WA scheduling message sent'] = false;
+            rec.fields['Outreach Status'] = 'Pending';
+        });
+    });
+    res.json({ success: true });
+});
+
 // Fetch records from Airtable View (with live API + built-in view fallback)
 app.post('/api/airtable/fetch', async (req, res) => {
     const viewName = (req.body.viewName || AIRTABLE_CONFIG.defaultView).trim();
