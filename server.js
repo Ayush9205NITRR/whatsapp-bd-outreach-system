@@ -7,6 +7,24 @@ const csv = require('csv-parser');
 const axios = require('axios');
 const QRCode = require('qrcode');
 const qrcodeTerminal = require('qrcode-terminal');
+
+// Patch whatsapp-web.js Puppeteer.exposeFunctionIfAbsent for Puppeteer 20.6+/24+ compatibility
+try {
+    const wwebPuppeteer = require('whatsapp-web.js/src/util/Puppeteer');
+    wwebPuppeteer.exposeFunctionIfAbsent = async function (page, name, fn) {
+        try {
+            const exist = await page.evaluate((n) => !!window[n], name);
+            if (exist) return;
+        } catch (_) {}
+        try {
+            await page.exposeFunction(name, fn);
+        } catch (err) {
+            if (err && String(err.message).includes('already exists')) return;
+            throw err;
+        }
+    };
+} catch (_) {}
+
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 
 const app = express();
